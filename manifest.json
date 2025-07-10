@@ -1,0 +1,13 @@
+{
+  "Author": "离披",
+  "InternalName": "EventResponseAnalyzer",
+  "Name": "解析事件效果",
+  "Description": "解析事件效果，数据来自kamigame",
+  "Changelog": "",
+  "Version": "1.0.0",
+  "Dependencies": [],
+  "Targets": [],
+  "RepositoryUrl": "https://github.com/URA-Plugins/EventResponseAnalyzer",
+  "DownloadUrl": "https://gh.shuise.dev/github.com/URA-Plugins/EventResponseAnalyzer/releases/latest/download/EventResponseAnalyzer.zip",
+  "LastUpdate": "1751719983"
+}

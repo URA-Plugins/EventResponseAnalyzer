@@ -10,12 +10,14 @@ namespace EventResponseAnalyzer
 {
     public class EventResponseAnalyzer : IPlugin
     {
+        [PluginDescription("解析事件效果")]
         public string Name => "EventResponseAnalyzer";
         public string Author => "离披";
         public Version Version => new(1, 0, 0);
+        public string[] Targets => [];
         public async Task UpdatePlugin(ProgressContext ctx)
         {
-            var progress = ctx.AddTask($"[EventResponseAnalyzer] Update");
+            var progress = ctx.AddTask($"[{Name}] 更新");
 
             using var client = new HttpClient();
             using var resp = await client.GetAsync($"https://api.github.com/repos/URA-Plugins/{Name}/releases/latest");
@@ -31,7 +33,12 @@ namespace EventResponseAnalyzer
             }
             progress.Increment(25);
 
-            using var msg = await client.GetAsync(jo["assets"][0]["browser_download_url"].ToString(), HttpCompletionOption.ResponseHeadersRead);
+            var downloadUrl = jo["assets"][0]["browser_download_url"].ToString();
+            if (Config.Updater.IsGithubBlocked && !Config.Updater.ForceUseGithubToUpdate)
+            {
+                downloadUrl = downloadUrl.Replace("https://", "https://gh.shuise.dev/");
+            }
+            using var msg = await client.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead);
             using var stream = await msg.Content.ReadAsStreamAsync();
             var buffer = new byte[8192];
             while (true)
