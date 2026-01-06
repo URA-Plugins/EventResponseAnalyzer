@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json.Linq;
 using Spectre.Console;
 using System.IO.Compression;
+using System.Text.RegularExpressions;
 using UmamusumeResponseAnalyzer;
 using UmamusumeResponseAnalyzer.Entities;
 using UmamusumeResponseAnalyzer.Plugin;
@@ -55,6 +56,11 @@ namespace EventResponseAnalyzer
             progress.StopTask();
         }
 
+        [PluginSetting, PluginDescription("是否在事件效果中显示当前技能灵感等级")]
+        public bool ShowSkillHintLevel { get; set; } = true;
+        [PluginSetting, PluginDescription("是否在事件效果中显示技能触发条件")]
+        public bool ShowSkillCondition { get; set; } = false;
+        Regex ExtractSkillNameRegex = new Regex("「(.*?)」");
         [Analyzer]
         public void Analyze(JObject jo)
         {
@@ -67,7 +73,7 @@ namespace EventResponseAnalyzer
             }
         }
 
-        public static void ParseSingleModeCheckEventResponse(Gallop.SingleModeCheckEventResponse @event)
+        public void ParseSingleModeCheckEventResponse(Gallop.SingleModeCheckEventResponse @event)
         {
             foreach (var i in @event.data.unchecked_event_array)
             {
@@ -89,6 +95,94 @@ namespace EventResponseAnalyzer
                         else
                         {
                             originalChoice = story.Choices[j][0]; //因为kamigame的事件无法直接根据SelectIndex区分成功与否，所以必然只会有一个Choice;
+                        }
+                        if (ShowSkillHintLevel || ShowSkillCondition)
+                        {
+                            var successSkillNames = ExtractSkillNameRegex.Matches(originalChoice.SuccessEffect);
+                            foreach (var matchedSkillName in successSkillNames.Cast<Match>())
+                            {
+                                var skillName = matchedSkillName.Groups[1].Value;
+                                var skill = SkillManagerGenerator.Default.GetSkillByName(skillName);
+                                if (skill != null)
+                                {
+                                    if (ShowSkillHintLevel)
+                                    {
+                                        var tip = @event.data.chara_info.skill_tips_array.FirstOrDefault(x => x.group_id == skill.GroupId && x.rarity == skill.Rarity);
+                                        originalChoice.SuccessEffect = originalChoice.SuccessEffect.Replace(skillName, $"{skillName}(Lv.{TipColor(tip?.level ?? 0)})");
+                                    }
+                                    if (ShowSkillCondition && skill.Propers.Length != 0)
+                                    {
+                                        originalChoice.SuccessEffect = originalChoice.SuccessEffect.Replace(skillName, $"{skillName}[[{SkillCondition(skill.Propers)}]]");
+                                    }
+                                }
+                            }
+                            var failSkillNames = ExtractSkillNameRegex.Matches(originalChoice.FailedEffect);
+                            foreach (var matchedSkillName in failSkillNames.Cast<Match>())
+                            {
+                                var skillName = matchedSkillName.Groups[1].Value;
+                                var skill = SkillManagerGenerator.Default.GetSkillByName(skillName);
+                                if (skill != null)
+                                {
+                                    if (ShowSkillHintLevel)
+                                    {
+                                        var tip = @event.data.chara_info.skill_tips_array.FirstOrDefault(x => x.group_id == skill.GroupId && x.rarity == skill.Rarity);
+                                        originalChoice.FailedEffect = originalChoice.FailedEffect.Replace(skillName, $"{skillName}(Lv.{TipColor(tip?.level ?? 0)})");
+                                    }
+                                    if (ShowSkillCondition && skill.Propers.Length != 0)
+                                    {
+                                        originalChoice.FailedEffect = originalChoice.FailedEffect.Replace(skillName, $"{skillName}[[{SkillCondition(skill.Propers)}]]");
+                                    }
+                                }
+                            }
+                            string TipColor(int level) => level switch
+                            {
+                                <= 0 => $"[red]{level}[/]",
+                                < 5 => $"[yellow]{level}[/]",
+                                >= 5 => $"[green]{level}[/]"
+                            };
+                            string SkillCondition(SkillProper[] propers)
+                            {
+                                var sb = new System.Text.StringBuilder();
+                                for (var i = 0; i < propers.Length; i++)
+                                {
+                                    var proper = propers[i];
+                                    if (i != 0) sb.Append('/');
+                                    if (proper.Style != SkillProper.StyleType.None)
+                                    {
+                                        sb.Append(StyleToText(proper.Style));
+                                    }
+                                    if (proper.Distance != SkillProper.DistanceType.None)
+                                    {
+                                        if (sb.Length != 0 && sb[^1] != '/') sb.Append('・');
+                                        sb.Append(DistanceToText(proper.Distance));
+                                    }
+                                    if (proper.Ground != SkillProper.GroundType.None)
+                                    {
+                                        if (sb.Length != 0 && sb[^1] != '/') sb.Append('・');
+                                        sb.Append(GroundToText(proper.Ground));
+                                    }
+                                }
+                                return sb.ToString();
+                                string StyleToText(SkillProper.StyleType style) => style switch
+                                {
+                                    SkillProper.StyleType.Nige => "逃",
+                                    SkillProper.StyleType.Senko => "先",
+                                    SkillProper.StyleType.Sashi => "差",
+                                    SkillProper.StyleType.Oikomi => "追"
+                                };
+                                string DistanceToText(SkillProper.DistanceType distance) => distance switch
+                                {
+                                    SkillProper.DistanceType.Short => "短",
+                                    SkillProper.DistanceType.Mile => "英",
+                                    SkillProper.DistanceType.Middle => "中",
+                                    SkillProper.DistanceType.Long => "长"
+                                };
+                                string GroundToText(SkillProper.GroundType ground) => ground switch
+                                {
+                                    SkillProper.GroundType.Dirt => "泥",
+                                    SkillProper.GroundType.Turf => "芝"
+                                };
+                            }
                         }
                         //显示选项
                         var tree = new Tree($"{(string.IsNullOrEmpty(originalChoice.Option) ? I18N_NoOption : originalChoice.Option)}".EscapeMarkup());
