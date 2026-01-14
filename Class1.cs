@@ -94,7 +94,10 @@ namespace EventResponseAnalyzer
                         }
                         else
                         {
-                            originalChoice = story.Choices[j][0]; //因为kamigame的事件无法直接根据SelectIndex区分成功与否，所以必然只会有一个Choice;
+                            // clone
+                            originalChoice.Option = new string(story.Choices[j][0].Option); //因为kamigame的事件无法直接根据SelectIndex区分成功与否，所以必然只会有一个Choice;
+                            originalChoice.SuccessEffect = new string(story.Choices[j][0].SuccessEffect);
+                            originalChoice.FailedEffect = new string(story.Choices[j][0].FailedEffect);
                         }
                         if (ShowSkillHintLevel || ShowSkillCondition)
                         {
