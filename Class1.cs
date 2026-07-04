@@ -1,10 +1,11 @@
-﻿using Newtonsoft.Json.Linq;
+using Gallop;
+using Gallop.Endpoints;
 using Spectre.Console;
-using System.IO.Compression;
-using System.Reflection;
+using Spectre.Console.Rendering;
 using System.Text.RegularExpressions;
 using UmamusumeResponseAnalyzer;
 using UmamusumeResponseAnalyzer.Entities;
+using UmamusumeResponseAnalyzer.LiveDisplay;
 using UmamusumeResponseAnalyzer.Plugin;
 using static EventResponseAnalyzer.i18n.ParseSingleModeCheckEventResponse;
 
@@ -12,222 +13,199 @@ namespace EventResponseAnalyzer
 {
     public class EventResponseAnalyzer : IPlugin
     {
-        [PluginDescription("解析事件效果")]
+        const string WorkspaceTitle = "EventResponseAnalyzer";
+        const string EventsPanelKey = "events";
+
+        static readonly Regex ExtractSkillNameRegex = new("「(.*?)」");
+
+        ILiveDisplayOutput? liveDisplay;
+        LiveDisplayWorkspace? workspace;
+
         public string Name => "EventResponseAnalyzer";
         public string Author => "离披";
         public string[] Targets => [];
-        public async Task UpdatePlugin(ProgressContext ctx)
+
+        public void Initialize(IPluginContext context)
         {
-            var progress = ctx.AddTask($"[[{Name}]] 更新");
-
-            using var client = new HttpClient();
-            using var resp = await client.GetAsync($"https://api.github.com/repos/URA-Plugins/{Name}/releases/latest");
-            var json = await resp.Content.ReadAsStringAsync();
-            var jo = JObject.Parse(json);
-
-            var isLatest = ("v" + ((IPlugin)this).Version.ToString()).Equals("v" + jo["tag_name"]?.ToString());
-            if (isLatest)
-            {
-                progress.Increment(progress.MaxValue);
-                progress.StopTask();
-                return;
-            }
-            progress.Increment(25);
-
-            var downloadUrl = jo["assets"][0]["browser_download_url"].ToString();
-            if (Config.Updater.IsGithubBlocked && !Config.Updater.ForceUseGithubToUpdate)
-            {
-                downloadUrl = downloadUrl.Replace("https://", "https://gh.shuise.dev/");
-            }
-            using var msg = await client.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead);
-            using var stream = await msg.Content.ReadAsStreamAsync();
-            var buffer = new byte[8192];
-            while (true)
-            {
-                var read = await stream.ReadAsync(buffer);
-                if (read == 0)
-                    break;
-                progress.Increment(read / msg.Content.Headers.ContentLength ?? 1 * 0.5);
-            }
-            using var archive = new ZipArchive(stream);
-            archive.ExtractToDirectory(Path.Combine("Plugins", Name), true);
-            progress.Increment(25);
-
-            progress.StopTask();
+            liveDisplay = context.LiveDisplay;
+            workspace = LiveDisplay.CreateWorkspace(WorkspaceTitle);
         }
 
-        [PluginSetting, PluginDescription("是否在事件效果中显示当前技能灵感等级")]
-        public bool ShowSkillHintLevel { get; set; } = true;
-        [PluginSetting, PluginDescription("是否在事件效果中显示技能触发条件")]
-        public bool ShowSkillCondition { get; set; } = false;
-        Regex ExtractSkillNameRegex = new Regex("「(.*?)」");
-        [Analyzer]
-        public void Analyze(JObject jo)
+        public Task UpdatePlugin(ProgressContext ctx) => Task.CompletedTask;
+
+        [ResponseAnalyzer<GameApi.SingleMode.CheckEvent>]
+        public ValueTask Analyze(SingleModeCheckEventResponse response)
+            => Analyze(response.data?.chara_info, response.data?.unchecked_event_array);
+
+        [ResponseAnalyzer<GameApi.SingleModeArc.CheckEvent>]
+        public ValueTask Analyze(SingleModeArcCheckEventResponse response)
+            => Analyze(response.data?.chara_info, response.data?.unchecked_event_array);
+
+        [ResponseAnalyzer<GameApi.SingleModeBreeders.CheckEvent>]
+        public ValueTask Analyze(SingleModeBreedersCheckEventResponse response)
+            => Analyze(response.data?.chara_info, response.data?.unchecked_event_array);
+
+        [ResponseAnalyzer<GameApi.SingleModeCook.CheckEvent>]
+        public ValueTask Analyze(SingleModeCookCheckEventResponse response)
+            => Analyze(response.data?.chara_info, response.data?.unchecked_event_array);
+
+        [ResponseAnalyzer<GameApi.SingleModeFree.CheckEvent>]
+        public ValueTask Analyze(SingleModeFreeCheckEventResponse response)
+            => Analyze(response.data?.chara_info, response.data?.unchecked_event_array);
+
+        [ResponseAnalyzer<GameApi.SingleModeLegend.CheckEvent>]
+        public ValueTask Analyze(SingleModeLegendCheckEventResponse response)
+            => Analyze(response.data?.chara_info, response.data?.unchecked_event_array);
+
+        [ResponseAnalyzer<GameApi.SingleModeLive.CheckEvent>]
+        public ValueTask Analyze(SingleModeLiveCheckEventResponse response)
+            => Analyze(response.data?.chara_info, response.data?.unchecked_event_array);
+
+        [ResponseAnalyzer<GameApi.SingleModeMecha.CheckEvent>]
+        public ValueTask Analyze(SingleModeMechaCheckEventResponse response)
+            => Analyze(response.data?.chara_info, response.data?.unchecked_event_array);
+
+        [ResponseAnalyzer<GameApi.SingleModeOnsen.CheckEvent>]
+        public ValueTask Analyze(SingleModeOnsenCheckEventResponse response)
+            => Analyze(response.data?.chara_info, response.data?.unchecked_event_array);
+
+        [ResponseAnalyzer<GameApi.SingleModePioneer.CheckEvent>]
+        public ValueTask Analyze(SingleModePioneerCheckEventResponse response)
+            => Analyze(response.data?.chara_info, response.data?.unchecked_event_array);
+
+        [ResponseAnalyzer<GameApi.SingleModeRamen.CheckEvent>]
+        public ValueTask Analyze(SingleModeRamenCheckEventResponse response)
+            => Analyze(response.data?.chara_info, response.data?.unchecked_event_array);
+
+        [ResponseAnalyzer<GameApi.SingleModeSport.CheckEvent>]
+        public ValueTask Analyze(SingleModeSportCheckEventResponse response)
+            => Analyze(response.data?.chara_info, response.data?.unchecked_event_array);
+
+        [ResponseAnalyzer<GameApi.SingleModeTeam.CheckEvent>]
+        public ValueTask Analyze(SingleModeTeamCheckEventResponse response)
+            => Analyze(response.data?.chara_info, response.data?.unchecked_event_array);
+
+        [ResponseAnalyzer<GameApi.SingleModeVenus.CheckEvent>]
+        public ValueTask Analyze(SingleModeVenusCheckEventResponse response)
+            => Analyze(response.data?.chara_info, response.data?.unchecked_event_array);
+
+        ValueTask Analyze(SingleModeChara? charaInfo, SingleModeEventInfo[]? uncheckedEvents)
         {
-            if (!jo.HasCharaInfo()) return;
-            if (jo["data"] is null || jo["data"] is not JObject data) return;
-            if (data["chara_info"] is null || data["chara_info"] is not JObject chara_info) return;
-            if (data.ContainsKey("unchecked_event_array"))
-            {
-                ParseSingleModeCheckEventResponse(jo.ToObject<Gallop.SingleModeCheckEventResponse>());
-            }
+            if (charaInfo == null || uncheckedEvents == null) return ValueTask.CompletedTask;
+
+            ParseSingleModeCheckEventResponse(charaInfo, uncheckedEvents);
+            return ValueTask.CompletedTask;
         }
 
-        public void ParseSingleModeCheckEventResponse(Gallop.SingleModeCheckEventResponse @event)
+        public void ParseSingleModeCheckEventResponse(SingleModeChara charaInfo, SingleModeEventInfo[] uncheckedEvents)
         {
-            foreach (var i in @event.data.unchecked_event_array)
+            var trees = new List<IRenderable>();
+            foreach (var i in uncheckedEvents)
+                trees.Add(Database.Events.TryGetValue(i.story_id, out var story)
+                    ? BuildKnownEventTree(charaInfo, i, story)
+                    : BuildUnknownEventTree(i));
+
+            if (trees.Count > 0)
+                LiveDisplay.SetPanel(Workspace, EventsPanelKey, "事件分析", new Rows(trees), fullBleed: true);
+        }
+
+        static Tree BuildKnownEventTree(SingleModeChara charaInfo, SingleModeEventInfo eventInfo, Story story)
+        {
+            var mainTree = new Tree(story.TriggerName.EscapeMarkup());
+            var eventTree = new Tree($"{story.Name.EscapeMarkup()}({eventInfo.story_id})");
+
+            for (var j = 0; j < eventInfo.event_contents_info.choice_array.Length; ++j)
             {
-                //收录在数据库中
-                if (Database.Events.TryGetValue(i.story_id, out var story))
+                var originalChoice = GetStoryChoice(story, eventInfo.event_contents_info.choice_array[j], j);
+
+                originalChoice.SuccessEffect = EnrichSkillEffect(originalChoice.SuccessEffect, charaInfo);
+                originalChoice.FailedEffect = EnrichSkillEffect(originalChoice.FailedEffect, charaInfo);
+
+                var tree = new Tree((string.IsNullOrEmpty(originalChoice.Option)
+                    ? I18N_NoOption
+                    : originalChoice.Option).EscapeMarkup());
+
+                if (string.IsNullOrEmpty(originalChoice.FailedEffect))
+                    tree.AddNode(originalChoice.SuccessEffect);
+                else if (originalChoice.SuccessEffect == I18N_UnknownEffect && originalChoice.FailedEffect == I18N_UnknownEffect)
+                    tree.AddNode($"[#afafaf on #081129]{I18N_UnknownEffect}[/]");
+                else
+                    tree.AddNode($"[mediumspringgreen on #081129]({I18N_WhenSuccess}){originalChoice.SuccessEffect}[/]{Environment.NewLine}[#FF0050 on #081129]({I18N_WhenFail}){originalChoice.FailedEffect}[/]{Environment.NewLine}");
+
+                eventTree.AddNode(tree);
+            }
+
+            mainTree.AddNode(eventTree);
+            return mainTree;
+        }
+
+        static Tree BuildUnknownEventTree(SingleModeEventInfo eventInfo)
+        {
+            var mainTree = new Tree(I18N_UnknownSource);
+            var eventTree = new Tree($"{I18N_UnknownEvent}({eventInfo.story_id})");
+
+            foreach (var choice in eventInfo.event_contents_info.choice_array)
+            {
+                var tree = new Tree(string.Format(I18N_UnknownOption, FirstSelectIndex(choice)));
+                tree.AddNode(I18N_UnknownEffect);
+                eventTree.AddNode(tree);
+            }
+
+            mainTree.AddNode(eventTree);
+            return mainTree;
+        }
+
+        static Choice GetStoryChoice(Story story, ChoiceArray choice, int index)
+        {
+            if (story.Choices.Count <= index || story.Choices[index].Count == 0)
+                return new Choice
                 {
-                    var mainTree = new Tree(story.TriggerName.EscapeMarkup()); //触发者名称
-                    var eventTree = new Tree($"{story.Name.EscapeMarkup()}({i.story_id})"); //事件名称
-                    var eventHasManualChoice = (i.event_contents_info.choice_array.Length >= 2);   // 是否有手动选项。有选项的不能获取结果了
-                    for (var j = 0; j < i.event_contents_info.choice_array.Length; ++j)
-                    {
-                        var originalChoice = new Choice();
-                        if (story.Choices.Count < (j + 1))
-                        {
-                            originalChoice.Option = string.Format(I18N_UnknownOption, i.event_contents_info.choice_array[j].select_index);
-                            originalChoice.SuccessEffect = I18N_UnknownEffect;
-                            originalChoice.FailedEffect = I18N_UnknownEffect;
-                        }
-                        else
-                        {
-                            // clone
-                            originalChoice.Option = new string(story.Choices[j][0].Option); //因为kamigame的事件无法直接根据SelectIndex区分成功与否，所以必然只会有一个Choice;
-                            originalChoice.SuccessEffect = new string(story.Choices[j][0].SuccessEffect);
-                            originalChoice.FailedEffect = new string(story.Choices[j][0].FailedEffect);
-                        }
-                        if (ShowSkillHintLevel || ShowSkillCondition)
-                        {
-                            var successSkillNames = ExtractSkillNameRegex.Matches(originalChoice.SuccessEffect);
-                            foreach (var matchedSkillName in successSkillNames.Cast<Match>())
-                            {
-                                var skillName = matchedSkillName.Groups[1].Value;
-                                var skill = SkillManagerGenerator.Default.GetSkillByName(skillName);
-                                if (skill != null)
-                                {
-                                    if (ShowSkillHintLevel)
-                                    {
-                                        var tip = @event.data.chara_info.skill_tips_array.FirstOrDefault(x => x.group_id == skill.GroupId && x.rarity == skill.Rarity);
-                                        originalChoice.SuccessEffect = originalChoice.SuccessEffect.Replace(skillName, $"{skillName}(Lv.{TipColor(tip?.level ?? 0)})");
-                                    }
-                                    if (ShowSkillCondition && skill.Propers.Length != 0)
-                                    {
-                                        originalChoice.SuccessEffect = originalChoice.SuccessEffect.Replace(skillName, $"{skillName}[[{SkillCondition(skill.Propers)}]]");
-                                    }
-                                }
-                            }
-                            var failSkillNames = ExtractSkillNameRegex.Matches(originalChoice.FailedEffect);
-                            foreach (var matchedSkillName in failSkillNames.Cast<Match>())
-                            {
-                                var skillName = matchedSkillName.Groups[1].Value;
-                                var skill = SkillManagerGenerator.Default.GetSkillByName(skillName);
-                                if (skill != null)
-                                {
-                                    if (ShowSkillHintLevel)
-                                    {
-                                        var tip = @event.data.chara_info.skill_tips_array.FirstOrDefault(x => x.group_id == skill.GroupId && x.rarity == skill.Rarity);
-                                        originalChoice.FailedEffect = originalChoice.FailedEffect.Replace(skillName, $"{skillName}(Lv.{TipColor(tip?.level ?? 0)})");
-                                    }
-                                    if (ShowSkillCondition && skill.Propers.Length != 0)
-                                    {
-                                        originalChoice.FailedEffect = originalChoice.FailedEffect.Replace(skillName, $"{skillName}[[{SkillCondition(skill.Propers)}]]");
-                                    }
-                                }
-                            }
-                            string TipColor(int level) => level switch
-                            {
-                                <= 0 => $"[red]{level}[/]",
-                                < 5 => $"[yellow]{level}[/]",
-                                >= 5 => $"[green]{level}[/]"
-                            };
-                            string SkillCondition(SkillProper[] propers)
-                            {
-                                var sb = new System.Text.StringBuilder();
-                                for (var i = 0; i < propers.Length; i++)
-                                {
-                                    var proper = propers[i];
-                                    if (i != 0) sb.Append('/');
-                                    if (proper.Style != SkillProper.StyleType.None)
-                                    {
-                                        sb.Append(StyleToText(proper.Style));
-                                    }
-                                    if (proper.Distance != SkillProper.DistanceType.None)
-                                    {
-                                        if (sb.Length != 0 && sb[^1] != '/') sb.Append('・');
-                                        sb.Append(DistanceToText(proper.Distance));
-                                    }
-                                    if (proper.Ground != SkillProper.GroundType.None)
-                                    {
-                                        if (sb.Length != 0 && sb[^1] != '/') sb.Append('・');
-                                        sb.Append(GroundToText(proper.Ground));
-                                    }
-                                }
-                                return sb.ToString();
-                                string StyleToText(SkillProper.StyleType style) => style switch
-                                {
-                                    SkillProper.StyleType.Nige => "逃",
-                                    SkillProper.StyleType.Senko => "先",
-                                    SkillProper.StyleType.Sashi => "差",
-                                    SkillProper.StyleType.Oikomi => "追"
-                                };
-                                string DistanceToText(SkillProper.DistanceType distance) => distance switch
-                                {
-                                    SkillProper.DistanceType.Short => "短",
-                                    SkillProper.DistanceType.Mile => "英",
-                                    SkillProper.DistanceType.Middle => "中",
-                                    SkillProper.DistanceType.Long => "长"
-                                };
-                                string GroundToText(SkillProper.GroundType ground) => ground switch
-                                {
-                                    SkillProper.GroundType.Dirt => "泥",
-                                    SkillProper.GroundType.Turf => "芝"
-                                };
-                            }
-                        }
-                        //显示选项
-                        var tree = new Tree($"{(string.IsNullOrEmpty(originalChoice.Option) ? I18N_NoOption : originalChoice.Option)}".EscapeMarkup());
-                        //如果没有失败效果则显示成功效果（别问我为什么这么设置，问kamigame
-                        if (string.IsNullOrEmpty(originalChoice.FailedEffect))
-                            tree.AddNode(originalChoice.SuccessEffect);
-                        else if (originalChoice.SuccessEffect == I18N_UnknownEffect && originalChoice.FailedEffect == I18N_UnknownEffect)
-                            tree.AddNode(MarkupText(I18N_UnknownEffect, State.None));
-                        else
-                            tree.AddNode($"[mediumspringgreen on #081129]({I18N_WhenSuccess}){originalChoice.SuccessEffect}[/]{Environment.NewLine}[#FF0050 on #081129]({I18N_WhenFail}){originalChoice.FailedEffect}[/]{Environment.NewLine}");
-                        eventTree.AddNode(tree);
+                    Option = string.Format(I18N_UnknownOption, FirstSelectIndex(choice)),
+                    SuccessEffect = I18N_UnknownEffect,
+                    FailedEffect = I18N_UnknownEffect,
+                };
 
-                        string MarkupText(string text, State state)
-                        {
-                            return state switch
-                            {
-                                State.Unknown => $"[darkorange on #081129]{text}({I18N_Unknown})[/]", //未知的
-                                State.Fail => $"[#FF0050 on #081129]{text}[/]", //失败
-                                State.Success => $"[mediumspringgreen on #081129]{text}[/]", //成功
-                                State.GreatSuccess => $"[lightgoldenrod1 on #081129]{text}[/]", //大成功
-                                State.None => $"[#afafaf on #081129]{text}[/]", //中性
-                                _ => throw new NotImplementedException()
-                            };
-                        }
-                    }
-                    mainTree.AddNode(eventTree);
-                    AnsiConsole.Write(mainTree);
-                }
-                else //未知事件，直接显示ChoiceIndex
-                {
-                    var mainTree = new Tree(I18N_UnknownSource);
-                    var eventTree = new Tree($"{I18N_UnknownEvent}({i?.story_id})");
-                    for (var j = 0; j < i?.event_contents_info?.choice_array.Length; ++j)
-                    {
-                        var tree = new Tree(string.Format(I18N_UnknownOption, i.event_contents_info.choice_array[j].select_index));
-                        tree.AddNode(I18N_UnknownEffect);
-                        eventTree.AddNode(tree);
-                    }
-                    mainTree.AddNode(eventTree);
-                    AnsiConsole.Write(mainTree);
-                }
-            }
+            var originalChoice = story.Choices[index][0];
+            return new Choice
+            {
+                Option = originalChoice.Option,
+                SuccessEffect = originalChoice.SuccessEffect,
+                FailedEffect = originalChoice.FailedEffect,
+            };
         }
+
+        static string EnrichSkillEffect(string effect, SingleModeChara charaInfo)
+        {
+            foreach (Match matchedSkillName in ExtractSkillNameRegex.Matches(effect))
+            {
+                var skillName = matchedSkillName.Groups[1].Value;
+                var skill = SkillManagerGenerator.Default.GetSkillByName(skillName);
+                if (skill == null)
+                    continue;
+
+                var tip = charaInfo.skill_tips_array?.FirstOrDefault(x => x.group_id == skill.GroupId && x.rarity == skill.Rarity);
+                effect = effect.Replace(skillName, $"{skillName}(Lv.{TipColor(tip?.level ?? 0)})");
+            }
+
+            return effect;
+        }
+
+        static int FirstSelectIndex(ChoiceArray choice)
+        {
+            return choice.select_index_info_array?.FirstOrDefault()?.select_index ?? 0;
+        }
+
+        static string TipColor(int level) => level switch
+        {
+            <= 0 => $"[red]{level}[/]",
+            < 5 => $"[yellow]{level}[/]",
+            >= 5 => $"[green]{level}[/]",
+        };
+
+        ILiveDisplayOutput LiveDisplay => liveDisplay
+            ?? throw new InvalidOperationException("EventResponseAnalyzer 尚未初始化 LiveDisplay。");
+
+        LiveDisplayWorkspace Workspace => workspace
+            ?? throw new InvalidOperationException("EventResponseAnalyzer 尚未创建 LiveDisplay workspace。");
     }
 }
