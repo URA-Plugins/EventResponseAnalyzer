@@ -11,7 +11,7 @@
     <PluginDisplayName>解析事件效果</PluginDisplayName>
     <PluginAuthor>离披</PluginAuthor>
     <PluginDescription>解析事件效果，数据来自kamigame</PluginDescription>
-    <PluginChangelog>修复技能等级显示会停留在历史最高等级的bug</PluginChangelog>
+    <PluginChangelog>补充 ExecCommand/Load 事件解析并调整显示优先级</PluginChangelog>
     <PluginRepositoryUrl>https://github.com/URA-Plugins/EventResponseAnalyzer</PluginRepositoryUrl>
   </PropertyGroup>
 
