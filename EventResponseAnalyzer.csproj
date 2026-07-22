@@ -8,6 +8,7 @@
     <Version>1.1.1</Version>
 
     <!-- URA 插件元数据 -->
+    <PluginInternalName>EventResponseAnalyzer</PluginInternalName>
     <PluginDisplayName>解析事件效果</PluginDisplayName>
     <PluginAuthor>离披</PluginAuthor>
     <PluginDescription>解析事件效果，数据来自kamigame</PluginDescription>
@@ -16,6 +17,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="tests\**\*.cs" />
     <Compile Update="i18n\ParseSingleModeCheckEventResponse.Designer.cs">
       <DependentUpon>ParseSingleModeCheckEventResponse.resx</DependentUpon>
       <DesignTime>True</DesignTime>
