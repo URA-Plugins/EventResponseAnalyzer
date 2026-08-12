@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Globalization;
 using System.Text;
 using Terminal.Gui.Drawing;
+using Terminal.Gui.Input;
 using Terminal.Gui.Text;
 using Terminal.Gui.ViewBase;
 using UmamusumeResponseAnalyzer.TerminalGui;
@@ -53,6 +54,15 @@ internal static class EventDisplayRenderer
             CanFocus = true;
             TabStop = TabBehavior.TabGroup;
             ViewportSettings = ViewportSettingsFlags.HasScrollBars;
+
+            AddCommand(Command.PageUp, () => Scroll(Command.PageUp));
+            AddCommand(Command.PageDown, () => Scroll(Command.PageDown));
+            AddCommand(Command.Start, () => Scroll(Command.Start));
+            AddCommand(Command.End, () => Scroll(Command.End));
+            KeyBindings.ReplaceCommands(Key.PageUp, Command.PageUp);
+            KeyBindings.ReplaceCommands(Key.PageDown, Command.PageDown);
+            KeyBindings.ReplaceCommands(Key.Home, Command.Start);
+            KeyBindings.ReplaceCommands(Key.End, Command.End);
 
             roots = [.. snapshot.Events.Select(item =>
                 new TreeNode(
@@ -113,6 +123,26 @@ internal static class EventDisplayRenderer
                 }
             }
 
+            return true;
+        }
+
+        bool Scroll(Command command)
+        {
+            var maxY = Math.Max(0, GetContentSize().Height - Viewport.Height);
+            var page = Math.Max(1, Viewport.Height);
+            var next = command switch
+            {
+                Command.PageUp => Math.Max(0, Viewport.Y - page),
+                Command.PageDown => Math.Min(maxY, Viewport.Y + page),
+                Command.Start => 0,
+                Command.End => maxY,
+                _ => Viewport.Y,
+            };
+            if (next == Viewport.Y)
+                return false;
+
+            Viewport = new Rectangle(0, next, Viewport.Width, Viewport.Height);
+            SetNeedsDraw();
             return true;
         }
 
