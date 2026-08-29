@@ -19,3 +19,11 @@ History 仅在当前进程内保存。配置文件为 `PluginData/EventResponseA
 ```
 
 `historyLimit` 的有效范围是 `0` 到 `1000`，默认值为 `100`；设为 `0` 时禁用 History，并按响应批次显示事件。
+
+## 构建
+
+```powershell
+git -c core.longpaths=true submodule update --init --recursive
+dotnet build .\EventResponseAnalyzer.csproj -c Release -m:1 -p:RuntimeIdentifier=win-x64 -p:SelfContained=false -p:PlatformTarget=AnyCPU -p:DeployUraPluginToLocalAppDataOnBuild=false
+dotnet run --project .\tests\EventResponseAnalyzer.Tests\EventResponseAnalyzer.Tests.csproj -c Release -p:GenerateUraPluginManifestOnBuild=false -p:PackageUraPluginOnBuild=false -p:DeployUraPluginToLocalAppDataOnBuild=false
+```
