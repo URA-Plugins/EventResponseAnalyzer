@@ -77,7 +77,7 @@ namespace EventResponseAnalyzer
                 EventDisplayPriority);
         }
 
-        public void Dispose()
+        public ValueTask DisposeAsync()
         {
             HistoryView? view;
             Workspace? target;
@@ -100,6 +100,7 @@ namespace EventResponseAnalyzer
             if (eventsPublished && target is not null)
                 target.RemovePanel(EventsPanelKey);
             eventsPublished = false;
+            return ValueTask.CompletedTask;
         }
 
         public async Task ConfigPromptAsync(
