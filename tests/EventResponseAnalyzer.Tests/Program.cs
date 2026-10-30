@@ -1,6 +1,25 @@
 using Gallop;
 using MessagePack;
 
+var culture = System.Globalization.CultureInfo.GetCultureInfo("zh-CN");
+System.Globalization.CultureInfo.CurrentCulture = culture;
+System.Globalization.CultureInfo.CurrentUICulture = culture;
+RepositoryChecks.Run();
+SourceDtoContract.Run();
+if (args.Length != 0 && args is not ["--package-load"]) throw new ArgumentException("Usage: EventResponseAnalyzer.Tests [--package-load]");
+if (args.Length == 0)
+{
+EventHistoryConfigSmoke.Run();
+}
+using var ui = new WorkspaceSmokeSession();
+if (args.Length == 0)
+{
+WorkspaceLifecycleSmoke.Run(ui, () => new EventResponseAnalyzer.EventResponseAnalyzer(), "EventResponseAnalyzer");
+await AnalyzerRegistrationSmoke.Run(ui);
+await EventBusinessSmoke.Run(ui);
+}
+PackageLoadSmoke.Run(ui);
+
 var exec = new SingleModeExecCommandResponse
 {
     data = new()
