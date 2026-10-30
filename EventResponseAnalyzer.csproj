@@ -17,7 +17,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="tests\**\*.cs" />
     <Compile Update="i18n\ParseSingleModeCheckEventResponse.Designer.cs">
       <DependentUpon>ParseSingleModeCheckEventResponse.resx</DependentUpon>
       <DesignTime>True</DesignTime>
