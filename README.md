@@ -2,6 +2,8 @@
 
 解析 single-mode `check_event`、`exec_command` 和 `load` 响应中的事件选项与效果，并在 `EventResponseAnalyzer` workspace 中显示结果。事件树在发布前冻结为不可变快照。
 
+Festa 另接收 `start`、`race_entry`、`race_out`、`attach_advice`、`check_point` 和 `festa_live` 中的事件，使用相同解析和历史去重规则。2026-11-01 实包回放收齐 232 条唯一事件，其中 43 条由这些入口补齐；`get_choice_reward` 不在接收范围内。
+
 ## History
 
 事件记录按 `single_mode_chara_id`、`turn`、`story_id` 唯一标识。同一记录再次输出时原位更新；一次响应中的多个事件可分别浏览。

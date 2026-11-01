@@ -75,6 +75,18 @@ namespace EventResponseAnalyzer
                 [EndpointPattern.Wildcard("/umamusume/single_mode*/load")],
                 invocation => Analyze(invocation.Endpoint, invocation.Payload),
                 EventDisplayPriority);
+            context.Analyzers.Register<SingleModeFestaStartResponse>(
+                AnalyzerKind.Response,
+                [EndpointPattern.Exact("/umamusume/single_mode_festa/start")],
+                invocation => Analyze(
+                    invocation.Payload.data.single_mode_start_common.chara_info,
+                    invocation.Payload.data.single_mode_start_common.unchecked_event_array),
+                EventDisplayPriority);
+            context.Analyzers.Register<SingleModeFestaCheckEventResponse>(
+                AnalyzerKind.Response,
+                [EndpointPattern.Regex("^/umamusume/single_mode_festa/(?:race_entry|race_out|attach_advice|check_point|festa_live)$")],
+                invocation => Analyze(invocation.Payload.data.chara_info, invocation.Payload.data.unchecked_event_array),
+                EventDisplayPriority);
         }
 
         public ValueTask DisposeAsync()
